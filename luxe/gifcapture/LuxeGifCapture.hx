@@ -116,6 +116,9 @@ class LuxeGifCapture {
         public function record() {
 
             cpp.vm.Gc.enable(false);
+            
+            accum = 0;
+            last_tick = Luxe.time;
 
             recorder.record();
 
@@ -178,10 +181,10 @@ class LuxeGifCapture {
 
     function ontick(_) {
 
-        if(recorder.state == Recording) {
+        var frame_delta = Luxe.time - last_tick;
+        last_tick = Luxe.time;
 
-            var frame_delta = Luxe.time - last_tick;
-            last_tick = Luxe.time;
+        if(recorder.state == Recording) {
 
             accum += frame_delta;
 
