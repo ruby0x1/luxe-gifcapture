@@ -9,6 +9,30 @@ A luxe wrapper over the gifcapture library to simplify capturing realtime gifs f
 
 Requires cpp targets, and currently makes the assumption of desktop GL availability (glBlitFramebuffer specifically) This means it won't run on mobile right now as is. The blit handles the downsizing of the gif.
 
+### Install
+
+If you need the dependencies:
+`haxelib git gif https://github.com/snowkit/gif`
+`haxelib git gifcapture https://github.com/snowkit/gifcapture`
+`haxelib git linc_dialogs https://github.com/snowkit/linc_dialogs`
+
+Then setup this library:
+`haxelib git luxe_gifcapture https://github.com/underscorediscovery/luxe-gifcapture`
+
+Add all of them to your flow file:
+
+```js
+build : {
+  dependencies : {
+    luxe : '*',
+    gif : '*',
+    linc_dialogs : '*',
+    gifcapture : '*',
+    luxe_gifcapture : '*',
+  }
+},
+```
+
 ### Usage
 
 See `tests/test_luxe/`
