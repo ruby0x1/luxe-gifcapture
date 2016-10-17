@@ -16,7 +16,7 @@ If you need the dependencies:
 `haxelib git gifcapture https://github.com/snowkit/gifcapture`   
 `haxelib git linc_dialogs https://github.com/snowkit/linc_dialogs`   
 
-Then setup this library:
+Then setup this library:   
 `haxelib git luxe_gifcapture https://github.com/underscorediscovery/luxe-gifcapture`
 
 Add all of them to your flow file:
