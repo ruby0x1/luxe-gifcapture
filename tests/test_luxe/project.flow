@@ -1,0 +1,27 @@
+{
+  project : {
+    name : 'gifcapture_test',
+    version : '1.0.0',
+    author : 'snowkit',
+
+    app : {
+      name : 'gifcapture_test',
+      package : 'com.luxeengine.gifcapture_test',
+    },
+
+    build : {
+      dependencies : {
+        luxe : '*',
+        gif : '*',
+        linc_dialogs : '*',
+        gifcapture : '*',
+        luxe_gifcapture : '*',
+      }
+    },
+
+    files : {
+      config : 'config.json',
+      assets : 'assets/'
+    }
+  }
+}
