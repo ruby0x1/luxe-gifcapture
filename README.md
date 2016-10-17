@@ -1,6 +1,8 @@
 # luxe-gifcapture
 A luxe wrapper over the gifcapture library to simplify capturing realtime gifs from in game.
 
+![](example.gif)
+
 ### Requirements
 
 - [gif](https://github.com/snowkit/gif)
