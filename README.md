@@ -12,9 +12,9 @@ Requires cpp targets, and currently makes the assumption of desktop GL availabil
 ### Install
 
 If you need the dependencies:
-`haxelib git gif https://github.com/snowkit/gif`
-`haxelib git gifcapture https://github.com/snowkit/gifcapture`
-`haxelib git linc_dialogs https://github.com/snowkit/linc_dialogs`
+`haxelib git gif https://github.com/snowkit/gif`   
+`haxelib git gifcapture https://github.com/snowkit/gifcapture`   
+`haxelib git linc_dialogs https://github.com/snowkit/linc_dialogs`   
 
 Then setup this library:
 `haxelib git luxe_gifcapture https://github.com/underscorediscovery/luxe-gifcapture`
