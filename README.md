@@ -7,16 +7,14 @@ A luxe wrapper over the gifcapture library to simplify capturing realtime gifs f
 
 - [gif](https://github.com/snowkit/gif)
 - [gifcapture](https://github.com/snowkit/gifcapture)
-- [linc_dialogs](https://github.com/snowkit/linc_dialogs)
 
-Requires cpp targets, and currently makes the assumption of desktop GL availability (glBlitFramebuffer specifically) This means it won't run on mobile right now as is. The blit handles the downsizing of the gif.
+Requires cpp target (due to gifcapture being threaded atm).
 
 ### Install
 
 If you need the dependencies:   
 `haxelib git gif https://github.com/snowkit/gif`   
 `haxelib git gifcapture https://github.com/snowkit/gifcapture`   
-`haxelib git linc_dialogs https://github.com/snowkit/linc_dialogs`   
 
 Then setup this library:   
 `haxelib git luxe_gifcapture https://github.com/underscorediscovery/luxe-gifcapture`
@@ -28,7 +26,6 @@ build : {
   dependencies : {
     luxe : '*',
     gif : '*',
-    linc_dialogs : '*',
     gifcapture : '*',
     luxe_gifcapture : '*',
   }
@@ -39,17 +36,22 @@ build : {
 
 See `tests/test_luxe/`
 
-Create a capture instance:
+Create a capture instance, along with options and oncomplete handler:
+The test example uses the [linc_dialogs](https://github.com/snowkit/linc_dialogs) library to open a save dialog to write the file.
 
 ```haxe
- capture = new LuxeGifCapture(
-    Std.int(Luxe.screen.w/4),   //
-    Std.int(Luxe.screen.h/4),   //
-    30,                         // 30 frames per second
-    5,                          // 5 seconds, use 0 to disable max time
-    GifQuality.Worst,           // quality
-    GifRepeat.Infinite          // repeat count
-);
+capture = new LuxeGifCapture({
+    width: Std.int(Luxe.screen.w/4),
+    height: Std.int(Luxe.screen.h/4),
+    fps: 50, 
+    max_time: 5,
+    quality: GifQuality.Worst,
+    repeat: GifRepeat.Infinite,
+    oncomplete: function(_bytes:haxe.io.Bytes) {
+        var path = Dialogs.save('Save GIF');
+        if(path != '') sys.io.File.saveBytes(path, _bytes);
+    }
+});
 ```
 
 Toggle recording:
@@ -69,13 +71,17 @@ if(keycode == Key.space) {
 }
 ```
 
-When done recording, call commit and then the save dialog will pop up when it's finished encoding. It will display a colored progress bar while it's busy encoding in the background.
+When done recording, call commit and then the callback will be called when it's finished encoding. It will display a colored progress bar while it's busy encoding in the background.
 
 ### Notes
 
-This library listens to the `tick_end` event - the very end of the luxe frame.
+This library listens to the internal luxe events `tickstart`/`tickend` - the very start and end of the luxe frame. 
 
-Then it switches to the default framebuffer (use `force_default_fbo` to use the active FBO instead) and then calls `glBlitFramebuffer` to copy the pixels to a internal render texture of the output size. 
+When you create an instance of this library, it swaps out what the engine 'default framebuffer' means - by replacing the default framebuffer with a render target of the same size. 
 
-It then sends the pixels to the gifcapture library for encoding.
-When the encoding is complete it automatically opens a save file dialog, this is not configurable right now but soon will be.
+When the frame starts, it ensures this framebuffer is active, then at the end of the frame, renders this framebuffer to the default framebuffer, so you shouldn't notice any difference. It does for a few reasons: it wants the full frame in a single bindable texture, so it can be cheaply rendered to a smaller target texture. This allows it to correctly resolve multisamples (antialiasing), apply texture filtering, and cheaply downsize/upsize the pixels in one go. This reduces the amount of bandwidth back and forth between ram/GPU as well, by using the GPU to copy it across. 
+
+By rendering, instead of blitting, it's also more portable and works on ES2/WebGL like targets. When gifcapture supports non-threaded mode (soon) this should allow this to work on all current luxe targets.
+
+It then sends the pixels of the destination texture to the gifcapture library for encoding!
+

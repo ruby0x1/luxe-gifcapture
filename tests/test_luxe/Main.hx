@@ -2,6 +2,7 @@
 import luxe.Input;
 import phoenix.geometry.QuadGeometry;
 import luxe.gifcapture.LuxeGifCapture;
+import dialogs.Dialogs;
 
 class Main extends luxe.Game {
 
@@ -17,13 +18,24 @@ class Main extends luxe.Game {
            y:100
         });
 
-        capture = new LuxeGifCapture(
-            Std.int(Luxe.screen.w/4),
-            Std.int(Luxe.screen.h/4),
-            50, 5,
-            GifQuality.Worst,
-            GifRepeat.Infinite
-        );
+        capture = new LuxeGifCapture({
+            width: Std.int(Luxe.screen.w/4),
+            height: Std.int(Luxe.screen.h/4),
+            fps: 50, 
+            max_time: 5,
+            quality: GifQuality.Worst,
+            repeat: GifRepeat.Infinite,
+            oncomplete: function(_bytes:haxe.io.Bytes) {
+
+                var path = Dialogs.save('Save GIF');
+                if(path != '') {
+                    sys.io.File.saveBytes(path, _bytes);
+                } else {
+                    trace('No path chosen, file not saved!');
+                }
+
+            }
+        });
 
     } //ready
 
