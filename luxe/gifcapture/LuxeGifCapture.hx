@@ -7,6 +7,7 @@ import luxe.Log.def;
 
 import phoenix.Batcher;
 import phoenix.RenderTexture;
+import phoenix.Renderer.RenderTarget;
 import phoenix.Texture.FilterType;
 import phoenix.geometry.QuadGeometry;
 
@@ -46,6 +47,7 @@ typedef LuxeGifCaptureOptions = {
 
 } //LuxeGifCaptureOptions
 
+
 class LuxeGifCapture {
 
     //public 
@@ -61,7 +63,7 @@ class LuxeGifCapture {
 
     //internal
 
-        var default_fbo: GLFramebuffer;
+        var default_target: RenderTarget;
         var source: RenderTexture;
         var dest: RenderTexture;
 
@@ -96,8 +98,8 @@ class LuxeGifCapture {
         
             source = new RenderTexture({
                 id: 'gifcapture_source',
-                width: Luxe.screen.w,
-                height: Luxe.screen.h,
+                width: Luxe.renderer.backbuffer.width,
+                height: Luxe.renderer.backbuffer.height,
                 filter_min: filter,
                 filter_mag: filter
             });
@@ -108,9 +110,9 @@ class LuxeGifCapture {
                 height: _options.height,
             });
 
-            default_fbo = Luxe.renderer.default_fbo;
-            Luxe.renderer.default_fbo = source.fbo;
-            GL.bindFramebuffer(GL.FRAMEBUFFER, source.fbo);
+            default_target = Luxe.renderer.default_target;
+            Luxe.renderer.default_target = source;
+            Luxe.renderer.bind_target(source);
 
         //the capturer
 
@@ -151,7 +153,6 @@ class LuxeGifCapture {
                 layer: 1000
             });
 
-
             dest_quad = new QuadGeometry({
                 batcher: dest_batch, texture: source,
                 x: 0, y: 0, w: _options.width, h: _options.height
@@ -168,13 +169,32 @@ class LuxeGifCapture {
             Luxe.on(luxe.Ev.tickend, ontick);
             Luxe.on(luxe.Ev.update, onupdate);
 
+        //handle resizing
+
+            Luxe.on(luxe.Ev.windowsized, function(_) {
+                source.destroy(true);
+                source = new RenderTexture({
+                    id: 'gifcapture_source',
+                    width: Luxe.renderer.backbuffer.width,
+                    height: Luxe.renderer.backbuffer.height,
+                    filter_min: filter,
+                    filter_mag: filter
+                });
+
+                display_quad.resize_xy(Luxe.screen.w, Luxe.screen.h);
+                display_batch.view.viewport.set(0, 0, Luxe.screen.w, Luxe.screen.h);
+
+                trace('capture source resize: ${source.width}x${source.height}');
+            });
+
     } //new
 
     //public 
 
         public function destroy() {
 
-            Luxe.renderer.default_fbo = default_fbo;
+            Luxe.renderer.default_target = default_target;
+            Luxe.renderer.bind_target(default_target);
 
             Luxe.off(luxe.Ev.tickstart, ontickstart);
             Luxe.off(luxe.Ev.tickend, ontick);
@@ -235,13 +255,15 @@ class LuxeGifCapture {
                 var prev_target = Luxe.renderer.target;
 
                 Luxe.renderer.target = dest;
+
                 dest_batch.draw();
 
                 Luxe.renderer.target = prev_target;
 
             //grab pixel data
 
-                GL.bindFramebuffer(GL.FRAMEBUFFER, dest.fbo);
+                GL.bindFramebuffer(GL.FRAMEBUFFER, dest.framebuffer);
+                GL.bindRenderbuffer(GL.RENDERBUFFER, dest.renderbuffer);
 
                     //place to put the pixels
                 var frame_data = new snow.api.buffers.Uint8Array(dest.width * dest.height * 3);
@@ -250,7 +272,8 @@ class LuxeGifCapture {
                 GL.readPixels(0, 0, dest.width, dest.height, GL.RGB, GL.UNSIGNED_BYTE, frame_data);
 
                     //reset the frame buffer state to previous
-                GL.bindFramebuffer(GL.FRAMEBUFFER, Luxe.renderer.state.current_fbo);
+                GL.bindFramebuffer(GL.FRAMEBUFFER, Luxe.renderer.state.current_framebuffer);
+                GL.bindRenderbuffer(GL.RENDERBUFFER, Luxe.renderer.state.current_renderbuffer);
 
             //convert and return
 
@@ -273,7 +296,7 @@ class LuxeGifCapture {
 
     function ontickstart(_) {
         
-        GL.bindFramebuffer(GL.FRAMEBUFFER, source.fbo);
+        GL.bindFramebuffer(GL.FRAMEBUFFER, source.framebuffer);
 
     } //ontickstart
 
@@ -301,7 +324,7 @@ class LuxeGifCapture {
 
         } //Recording
 
-        GL.bindFramebuffer(GL.FRAMEBUFFER, default_fbo);
+        GL.bindFramebuffer(GL.FRAMEBUFFER, default_target.framebuffer);
 
         display_batch.draw();
 
